@@ -46,7 +46,7 @@ enum Demo {
             a("Oral exam 1", sO, 17, 20, -7), a("Final exam", sF, nil, 100, 83),
         ])
         // Art History, total points
-        let art = Course(name: "Art History", credits: 3, instructor: "Dr. Petrova", colour: 4, mode: .points, assignments: [
+        let art = Course(name: "Art History", credits: 3, instructor: "Dr. Petrova", colour: 4, mode: .points, bump: 0.5, assignments: [
             a("Response 1", nil, 18, 20, -34), a("Response 2", nil, 19, 20, -27), a("Response 3", nil, 17, 20, -20), a("Response 4", nil, 20, 20, -13), a("Response 5", nil, 19, 20, -6),
             a("Response 6", nil, nil, 20, 5), a("Museum paper", nil, 91, 100, -8), a("Quiz", nil, 44, 50, -15), a("Midterm exam", nil, 87, 100, -2), a("Final exam", nil, nil, 150, 85),
         ])

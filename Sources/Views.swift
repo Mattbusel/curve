@@ -306,7 +306,15 @@ struct NeedView: View {
                 MarkerButton(title: "Done") { dismiss() }
             }.padding(18)
         }
-        .onAppear { if let t = router.needTarget { target = t } }
+        .onAppear {
+            if let t = router.needTarget { target = t; return }
+            let c = course
+            if let p = Grade.result(c).pct {
+                let steps = c.scale.filter { $0.letter != "F" }.sorted { $0.min < $1.min }
+                let above = steps.filter { $0.min > p }
+                target = (above.count > 1 ? above[1] : above.first)?.min ?? 90
+            }
+        }
         .onChange(of: router.needTarget) { _, v in if let v { withAnimation(.snappy(duration: 0.6)) { target = v } } }
     }
     func dialValue(_ n: Need) -> Double {
