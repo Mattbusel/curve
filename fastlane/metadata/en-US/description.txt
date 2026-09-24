@@ -1,0 +1,34 @@
+Curve is the grade tracker that answers the one question every student asks in December: what do I need on the final?
+
+Type your syllabus once. Log each score as it comes back. Curve keeps the real weighted grade, shows where it is heading, and turns the dial to the score you need on whatever is left.
+
+TERM
+• Every course on one page with the current grade, letter, a trend arrow from your last three scores, and the next thing due
+• Term GPA, weighted GPA and cumulative GPA at the top
+
+COURSES THAT MATCH THE SYLLABUS
+• Weighted categories or total points
+• Drop the lowest N in any category
+• Your own letter scale per course, with plus and minus grades
+• Honors and AP bumps for the weighted GPA
+• Quick setup: type "Homework 20, Quizzes 15, Midterm 25, Final 40" and it is done
+
+WHAT DO I NEED
+• Pick a target letter or slide to any percent
+• Curve solves for the score you need on everything still ungraded
+• It tells you plainly when a grade is already locked in, and when a target is out of reach
+• A table of every letter and what each one takes
+
+HONEST MATHS
+• Categories with nothing graded yet are left out and the rest re-weighted, and Curve says so
+• A running grade chart per course, so you see the curve, not just the number
+
+GPA
+• Per term and cumulative, unweighted and weighted
+• What-if: try a different finish for each course and watch the projection move
+• Editable points per letter
+
+REPORT
+• A clean one-page term report as a PDF, and a CSV of every score
+
+No account, no ads, no tracking. Everything stays on your phone.
