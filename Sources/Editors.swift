@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TermEditor: View {
     @Environment(Store.self) private var store
+    @Environment(Pro.self) private var pro
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var rename = false
@@ -14,7 +15,11 @@ struct TermEditor: View {
                     GhostButton(title: "Rename current", icon: "pencil") { let n = name.trimmingCharacters(in: .whitespaces); guard !n.isEmpty else { return }; store.renameTerm(n); dismiss() }
                     GhostButton(title: "Delete current", icon: "trash") { store.deleteTerm(); dismiss() }
                 }
-                MarkerButton(title: "Add as new term", icon: "plus") { let n = name.trimmingCharacters(in: .whitespaces); guard !n.isEmpty else { return }; store.addTerm(n); dismiss() }
+                MarkerButton(title: "Add as new term", icon: store.hasTerm && !pro.unlocked ? "lock.fill" : "plus") {
+                    // A second term is Pro: close this sheet first so the paywall can open over the page.
+                    if store.hasTerm && !pro.unlocked { dismiss(); DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { pro.ask(.terms) }; return }
+                    let n = name.trimmingCharacters(in: .whitespaces); guard !n.isEmpty else { return }; store.addTerm(n); dismiss()
+                }
             }
             Spacer()
         }.padding(18)
@@ -23,6 +28,7 @@ struct TermEditor: View {
 
 struct CourseEditor: View {
     @Environment(Store.self) private var store
+    @Environment(Pro.self) private var pro
     @Environment(\.dismiss) private var dismiss
     @State var course: Course
     let isNew: Bool
@@ -65,7 +71,7 @@ struct CourseEditor: View {
                                 TextField("Name", text: $cat.name).font(.ui(14, .heavy)).foregroundStyle(Paper.chalk)
                                 TextField("%", value: $cat.weight, format: .number).keyboardType(.decimalPad).font(.num(14, .bold)).foregroundStyle(Paper.chalk).frame(width: 48).multilineTextAlignment(.trailing)
                                 Text("%").font(.ui(12, .heavy)).foregroundStyle(Paper.dim)
-                                Menu { ForEach(0..<4, id: \.self) { n in Button(n == 0 ? "Keep all" : "Drop lowest \(n)") { cat.drop = n } } } label: {
+                                Menu { ForEach(0..<4, id: \.self) { n in dropButton(n) { cat.drop = n } } } label: {
                                     Text(cat.drop == 0 ? "keep" : "drop \(cat.drop)").font(.ui(11, .heavy)).foregroundStyle(Paper.chalk2).padding(.horizontal, 8).padding(.vertical, 5).background(Capsule().fill(Paper.card2))
                                 }
                                 Button { course.categories.removeAll { $0.id == cat.id } } label: { Image(systemName: "xmark").font(.system(size: 11, weight: .black)).foregroundStyle(Paper.dim) }.buttonStyle(.plain)
@@ -98,6 +104,12 @@ struct CourseEditor: View {
                 }
             }.padding(18)
         }
+        .sheet(item: Binding(get: { pro.paywall }, set: { pro.paywall = $0 })) { r in PaywallView(reason: r).presentationBackground(Paper.bg) }
+    }
+    /// Keep all is free; dropping the lowest scores is Pro.
+    func dropButton(_ n: Int, set: @escaping () -> Void) -> some View {
+        let title = n == 0 ? "Keep all" : "Drop lowest \(n)" + (pro.unlocked ? "" : " (Pro)")
+        return Button(title) { if n == 0 { set() } else { pro.ask(.drop, then: set) } }
     }
     func parseQuick() {
         var out: [Category] = []

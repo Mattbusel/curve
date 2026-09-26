@@ -6,6 +6,7 @@ import Charts
 struct TermView: View {
     @Environment(Store.self) private var store
     @Environment(Router.self) private var router
+    @Environment(Pro.self) private var pro
     var body: some View {
         let t = store.term
         let g = store.gpa(t, weighted: false), w = store.gpa(t, weighted: true), cum = store.cumulative(weighted: false)
@@ -19,7 +20,9 @@ struct TermView: View {
                 Menu {
                     ForEach(Array(store.terms.enumerated()), id: \.offset) { i, term in Button(term.name) { store.cur = i; store.save() } }
                     Divider()
-                    Button("New term", systemImage: "plus") { router.editingTerm = true }
+                    Button(pro.unlocked || !store.hasTerm ? "New term" : "New term (Pro)", systemImage: "plus") {
+                        if store.hasTerm { pro.ask(.terms) { router.editingTerm = true } } else { router.editingTerm = true }
+                    }
                     if store.hasTerm { Button("Rename term", systemImage: "pencil") { router.editingTerm = true } }
                 } label: {
                     Image(systemName: "calendar").font(.system(size: 15, weight: .black)).foregroundStyle(Paper.chalk2).frame(width: 40, height: 40).background(Circle().fill(Paper.card)).overlay(Circle().strokeBorder(Paper.line2))

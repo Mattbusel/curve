@@ -4,14 +4,19 @@ import SwiftUI
 struct CurveApp: App {
     @State private var store: Store
     @State private var router = Router()
+    @State private var pro: Pro
     init() {
         let a = ProcessInfo.processInfo.arguments
-        _store = State(initialValue: Store(demo: a.contains("-shot") || a.contains("-demoAutoplay")))
+        let demo = a.contains("-shot") || a.contains("-demoAutoplay")
+        _store = State(initialValue: Store(demo: demo))
+        // Screenshots and the review recording show Pro; the paywall shot shows it locked.
+        let shot = a.firstIndex(of: "-shot").flatMap { a.indices.contains($0 + 1) ? a[$0 + 1] : nil }
+        _pro = State(initialValue: demo ? Pro(forced: shot != "paywall") : Pro())
     }
     var body: some Scene {
         WindowGroup {
-            RootView().environment(store).environment(router).preferredColorScheme(.dark).tint(Paper.marker)
-                .onAppear { router.applyShotArgs(store); Autopilot.shared.run(store, router) }
+            RootView().environment(store).environment(router).environment(pro).preferredColorScheme(.dark).tint(Paper.marker)
+                .onAppear { router.applyShotArgs(store, pro); Autopilot.shared.run(store, router) }
         }
     }
 }
@@ -40,7 +45,8 @@ final class Router {
     var creatingCourse = false
     var editingTerm = false
 
-    func applyShotArgs(_ s: Store) {
+    @MainActor
+    func applyShotArgs(_ s: Store, _ pro: Pro) {
         let a = ProcessInfo.processInfo.arguments
         guard let i = a.firstIndex(of: "-shot"), i + 1 < a.count else { return }
         let cs = s.term.courses
@@ -55,6 +61,7 @@ final class Router {
             }
         case "gpa": tab = .gpa
         case "report": tab = .report
+        case "paywall": tab = .gpa; DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { pro.ask(.whatIf) }
         default: break
         }
     }
@@ -63,6 +70,7 @@ final class Router {
 struct RootView: View {
     @Environment(Store.self) private var store
     @Environment(Router.self) private var router
+    @Environment(Pro.self) private var pro
     var body: some View {
         @Bindable var router = router
         NavigationStack(path: $router.path) {
@@ -83,6 +91,10 @@ struct RootView: View {
         .sheet(isPresented: $router.creatingCourse) { CourseEditor(course: Course(name: ""), isNew: true).presentationBackground(Paper.bg2) }
         .sheet(item: $router.editingCourse) { c in CourseEditor(course: c, isNew: false).presentationBackground(Paper.bg2) }
         .sheet(isPresented: $router.editingTerm) { TermEditor().presentationBackground(Paper.bg2).presentationDetents([.medium]) }
+        // The course editor hosts its own paywall (drop lowest); this one covers everything else.
+        .sheet(item: Binding(get: { router.creatingCourse || router.editingCourse != nil ? nil : pro.paywall }, set: { pro.paywall = $0 })) { r in
+            PaywallView(reason: r).presentationBackground(Paper.bg)
+        }
     }
 }
 

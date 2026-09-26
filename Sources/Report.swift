@@ -4,6 +4,7 @@ import SwiftUI
 
 struct GPAView: View {
     @Environment(Store.self) private var store
+    @Environment(Pro.self) private var pro
     var body: some View {
         let cumU = store.cumulative(weighted: false), cumW = store.cumulative(weighted: true)
         let projU = store.cumulative(weighted: false, whatIf: true), projW = store.cumulative(weighted: true, whatIf: true)
@@ -34,7 +35,7 @@ struct GPAView: View {
 
             if store.hasTerm && !store.term.courses.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
-                    Eyebrow("What if · \(store.term.name)")
+                    HStack(spacing: 6) { Eyebrow("What if · \(store.term.name)"); if !pro.unlocked { ProLock() } }
                     Text("Tap a letter to try a different finish for each course.").font(.ui(12, .medium)).foregroundStyle(Paper.dim)
                     ForEach(store.term.courses) { c in
                         let now = Grade.letter(c)
@@ -45,12 +46,15 @@ struct GPAView: View {
                             Spacer()
                             Text(now ?? "--").font(.num(12, .bold)).foregroundStyle(Paper.dim)
                             Image(systemName: "arrow.right").font(.system(size: 10, weight: .black)).foregroundStyle(Paper.dim)
-                            Menu {
-                                Button("As it stands") { store.whatIf[c.id] = nil }
-                                ForEach(Scale.order, id: \.self) { l in Button(l) { store.whatIf[c.id] = l } }
-                            } label: {
-                                Text(pick ?? now ?? "--").font(.ui(13, .heavy)).foregroundStyle(pick == nil ? Paper.chalk2 : Paper.bg).frame(width: 44, height: 30)
-                                    .background(RoundedRectangle(cornerRadius: 8).fill(pick == nil ? Paper.card2 : Paper.marker))
+                            let chip = Text(pick ?? now ?? "--").font(.ui(13, .heavy)).foregroundStyle(pick == nil ? Paper.chalk2 : Paper.bg).frame(width: 44, height: 30)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(pick == nil ? Paper.card2 : Paper.marker))
+                            if pro.unlocked {
+                                Menu {
+                                    Button("As it stands") { store.whatIf[c.id] = nil }
+                                    ForEach(Scale.order, id: \.self) { l in Button(l) { store.whatIf[c.id] = l } }
+                                } label: { chip }
+                            } else {
+                                Button { pro.ask(.whatIf) } label: { chip }.buttonStyle(.plain)
                             }
                         }
                     }
@@ -80,6 +84,8 @@ struct GPAView: View {
                     }
                 }
             }.tile()
+
+            ProCard()
         }
     }
     func big(_ v: String, _ l: String, sub: String) -> some View {
@@ -94,6 +100,7 @@ struct GPAView: View {
 
 struct ReportView: View {
     @Environment(Store.self) private var store
+    @Environment(Pro.self) private var pro
     @State private var pdf: URL? = nil
     var body: some View {
         Page {
@@ -105,9 +112,13 @@ struct ReportView: View {
                 Spacer()
             }.padding(.top, 14)
             ReportSheet(store: store).tile(padding: 0, radius: 14)
-            HStack(spacing: 8) {
-                if let pdf { ShareLink(item: pdf) { shareLabel("Share PDF", "doc.richtext") } } else { shareLabel("Preparing PDF", "hourglass") }
-                ShareLink(item: store.csv()) { shareLabel("Export CSV", "tablecells") }
+            if pro.unlocked {
+                HStack(spacing: 8) {
+                    if let pdf { ShareLink(item: pdf) { shareLabel("Share PDF", "doc.richtext") } } else { shareLabel("Preparing PDF", "hourglass") }
+                    ShareLink(item: store.csv()) { shareLabel("Export CSV", "tablecells") }
+                }
+            } else {
+                Button { pro.ask(.report) } label: { shareLabel("Share PDF and CSV with Curve Pro", "lock.fill") }.buttonStyle(.plain)
             }
         }
         .task { pdf = PDF.make(store) }
